@@ -1,10 +1,9 @@
 import React from "react";
-import FlowerList from "./components/FlowerList";
+import FlowerList from "./Pages/FlowerPage";
 
 function App() {
     return (
         <div>
-            <h1>Welcome to the Flower Shop</h1>
             <FlowerList />
         </div>
     );
