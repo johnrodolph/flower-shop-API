@@ -11,3 +11,12 @@ export const getAllFlowers = async () => {
     }
 };
 
+export const updateFlower = async (fid, updatedFlower) => {
+    try {
+        const response = await api.put(`${process.env.REACT_APP_SPRINGBOOT_UPDATE_FLOWER}?fid=${fid}`, updatedFlower);
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Error updating flower: ", error);
+        return { success: false, message: "Failed to update flower" };
+    }
+};

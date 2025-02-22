@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { getAllFlowers } from "../API-Services/FlowerApi"; // Fetch flowers
-import api from "../API-Services/axiosConfig"; // ✅ Import axios for posting data
-import "../PagesCSS/FlowerPage.css"; // ✅ Import the CSS
+import api from "../API-Services/axiosConfig"; // Import axios for API calls
+import "../PagesCSS/FlowerPage.css"; // Import CSS
 
 const FlowerPage = () => {
     const [flowers, setFlowers] = useState([]);
-    const [showForm, setShowForm] = useState(false); // ✅ Controls form visibility
+    const [showForm, setShowForm] = useState(false);
     const [flowerName, setFlowerName] = useState("");
     const [flowerPrice, setFlowerPrice] = useState("");
+    const [editingFlower, setEditingFlower] = useState(null); // Track the flower being edited
 
     useEffect(() => {
         fetchFlowers();
@@ -16,7 +17,6 @@ const FlowerPage = () => {
     const fetchFlowers = async () => {
         try {
             const response = await getAllFlowers();
-            console.log("Fetched Flowers:", response); 
             if (response.success) {
                 setFlowers(response.data);
             } else {
@@ -41,11 +41,9 @@ const FlowerPage = () => {
             };
 
             const response = await api.post("/insertFlower", newFlower);
-            console.log("Added Flower:", response.data);
 
-            // ✅ Update flower list dynamically
             setFlowers([...flowers, response.data]);
-            setShowForm(false); // Hide form after adding
+            setShowForm(false);
             setFlowerName("");
             setFlowerPrice("");
         } catch (error) {
@@ -53,47 +51,87 @@ const FlowerPage = () => {
         }
     };
 
+    // ✅ Start editing a flower
+    const startEditing = (flower) => {
+        setEditingFlower(flower);
+        setFlowerName(flower.flname);
+        setFlowerPrice(flower.price);
+        setShowForm(true);
+    };
+
+    // ✅ Update flower details
+    const updateFlower = async () => {
+        if (!flowerName || !flowerPrice) {
+            alert("Please enter both flower name and price.");
+            return;
+        }
+
+        try {
+            const updatedFlower = {
+                flname: flowerName,
+                price: parseFloat(flowerPrice),
+            };
+
+            const response = await api.put(`/updateFlower?fid=${editingFlower.fid}`, updatedFlower);
+
+            setFlowers(
+                flowers.map((flower) =>
+                    flower.fid === editingFlower.fid ? response.data : flower
+                )
+            );
+
+            setEditingFlower(null);
+            setFlowerName("");
+            setFlowerPrice("");
+            setShowForm(false);
+        } catch (error) {
+            console.error("Error updating flower:", error);
+        }
+    };
+
     return (
         <div className="flower-page">
-           
-            <h2>Flower List</h2>
             <div className="add-button-container">
-            {/* ✅ Add Flower Button */}
-            <button className="add-flower-btn" onClick={() => setShowForm(!showForm)}>
-                {showForm ? "Cancel" : "Add Flower"}
-            </button>
+                <button className="add-flower-btn" onClick={() => setShowForm(!showForm)}>
+                    {showForm ? "Cancel" : editingFlower ? "Edit Flower" : "Add Flower"}
+                </button>
             </div>
-            {/* ✅ Flower Form (Inside Red Container) */}
+
+            {/* ✅ Flower Form */}
             {showForm && (
                 <div className="flower-form-container">
                     <div className="flower-form">
-                        <input 
-                            type="text" 
-                            placeholder="Flower Name" 
-                            value={flowerName} 
-                            onChange={(e) => setFlowerName(e.target.value)} 
+                        <input
+                            type="text"
+                            placeholder="Flower Name"
+                            value={flowerName}
+                            onChange={(e) => setFlowerName(e.target.value)}
                         />
-                        <input 
-                            type="number" 
-                            placeholder="Price" 
-                            value={flowerPrice} 
-                            onChange={(e) => setFlowerPrice(e.target.value)} 
+                        <input
+                            type="number"
+                            placeholder="Price"
+                            value={flowerPrice}
+                            onChange={(e) => setFlowerPrice(e.target.value)}
                         />
-                        <button onClick={addFlower}>Add</button>
+                        <button onClick={editingFlower ? updateFlower : addFlower}>
+                            {editingFlower ? "Update" : "Add"}
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* ✅ Display Flowers */}
             <ul className="flower-list">
                 {flowers.length > 0 ? (
                     flowers.map((flower) => (
                         <li key={flower.fid} className="flower-card">
                             <span className="flower-name">{flower.flname}</span> - 
                             <span className="flower-price"> ₱ {flower.price}.00</span>
+                            <button onClick={() => startEditing(flower)}>Edit</button>
                         </li>
                     ))
                 ) : (
-                    <p>No flowers available.</p> 
+                    <p>No flowers available.</p>
                 )}
             </ul>
         </div>
